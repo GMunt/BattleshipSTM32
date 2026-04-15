@@ -245,7 +245,6 @@ void TIM7_IRQHandler(void)
 
 	/* This code dims the RGB LEDs using PWM */
 
-
   /* USER CODE END TIM7_IRQn 0 */
   HAL_TIM_IRQHandler(&htim7);
   /* USER CODE BEGIN TIM7_IRQn 1 */
