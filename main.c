@@ -72,6 +72,8 @@ void MX_USB_HOST_Process(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+int timer = 0;
+
 char ramp = 0;
 char RED_BRT = 0;
 char GREEN_BRT = 0;
@@ -101,15 +103,35 @@ int CRC_Rx = 0;
 
 /* GAME VARS */
 
+typedef enum Level {
+	OFF,
+	DIM,
+	ON,
+	BLINK
+} Level;
+
+typedef enum Phase {
+	TITLE,
+	P1PLACE,
+	P2PLACE,
+	P1TURN,
+	P2TURN,
+	P1WIN,
+	P2WIN
+} Phase;
+
 typedef struct {
-	uint32_t vertical;		// 16 top row, 16 bottom row
-	uint32_t horizontal;	// 8 top, 8 mid, 8 bottom
+	Level vertical[2][16];		// 16 top row, 16 bottom row
+	Level horizontal[3][8];	// 8 top, 8 mid, 8 bottom
 } Map;
+
 
 Map p1_ships, p1_shots, p2_ships, p2_shots;
 Map cursor;
 
 void Display_Map(Map map);
+void Display_GameBoard(Phase phase);
+char Boolean_Brightness(Level brightness);
 
 // Ship bitmap
 	// Player 1 - maps to P2 shot bmp
@@ -192,9 +214,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-
-
-
   while (1)
   {
 //	  int i,j;
@@ -232,8 +251,16 @@ int main(void)
 //	  Seven_Segment(CRC_Rx);    // Display CRC calculated from received message
 //	  HAL_Delay(1000);          // Delay for 1 second
 
-	  p1_ships.horizontal = 0b00000000111010100001100010100001;
-	  p1_ships.vertical = 0b10100101011010011000010000100001;
+//	  p1_ships.horizontal = 0b00000000111010100001100010100001;
+//	  p1_ships.vertical = 0b10100101011010011000010000100001;
+	  p1_ships.vertical[0][0] = DIM;
+	  p1_ships.vertical[1][0] = BLINK;
+
+	  for(int i =0; i < 8; i++) {
+		  p1_ships.horizontal[0][i] = DIM;
+	  }
+
+	  p1_ships.horizontal[0][0] = ON;
 
 	  Display_Map(p1_ships);
 
@@ -245,9 +272,7 @@ int main(void)
 
 /* GAME HELPER FUNCTIONS */
 
-// I think we're going to need to go back to the non-destructive segment method so that each segment can have its own brightness
-
-void Set_7SEG_Section(int section, unsigned int hex) {
+void Set_7SEG_Section(int section, char hex) {
 	GPIOE->ODR = (0xFF00 | ~hex) & ~(1 << (section + 8));
 
 	// Set all selects high to latch-in character
@@ -255,26 +280,76 @@ void Set_7SEG_Section(int section, unsigned int hex) {
 	return;
 }
 
-void Display_GameBoard(Map shotMap, Map shipMap) {
+//void Display_GameBoard(Map shotMap, Map shipMap) {
+//	Map hitMap;
+//	hitMap.horizontal = shotMap.horizontal & shipMap.horizontal;
+//	hitMap.vertical = shotMap.vertical & shipMap.vertical;
+//
+//	if ((ramp & 0b10) == 0) {
+//		Display_Map(shotMap);
+//	} else {
+//		Display_Map(hitMap);
+//	}
+//}
+
+void Display_Map(Map map) {
+	char board[8] = {0};
+
+	int i = 0;
+
+	// Horizontal
+	for (i = 0; i < 8; i++) {
+		// Top
+		board[i] |= Boolean_Brightness(map.horizontal[0][i]) << 0;
+		// Middle
+		board[i] |= Boolean_Brightness(map.horizontal[1][i]) << 6;
+		// Bottom
+		board[i] |= Boolean_Brightness(map.horizontal[2][i]) << 3;
+	}
+
+	// Vertical
+	for (i = 0; i < 8; i++) {
+		// Top Left
+		board[i] |= Boolean_Brightness(map.vertical[0][i]) << 5;
+		// Top Right
+		board[i] |= Boolean_Brightness(map.vertical[0][i + 8]) << 1;
+		// Bottom Left
+		board[i] |= Boolean_Brightness(map.vertical[1][i]) << 4;
+		// Bottom Right
+		board[i] |= Boolean_Brightness(map.vertical[1][i + 8]) << 2;
+	}
+
+	for (i = 0; i < 8; i++) {
+		Set_7SEG_Section(i, board[i]);
+	}
+}
+
+void Display_GameBoard(Phase phase) {
+	Map shotMap;
+
+	switch (phase) {
+	// ...
+		case P1TURN:
+			shotMap = p1_shots;
+		case P2TURN:
+			shotMap = p2_shots;
+		// ...
+	}
+
+	// ...
 
 }
 
-void Display_Map(Map map) {
-	uint32_t vertComponent = 0;
-	uint32_t horizComponent = 0;
-	uint32_t hexPattern = 0;
-	for(int i = 0; i < 8; i++) {
-		hexPattern = 0;
-		vertComponent = (map.vertical & (0xF << (i * 4))) >> (i * 4);		// Grab the bits of the vertical map for this section
-		horizComponent = (map.horizontal & (0b111 << (i * 3))) >> (i * 3);	// ^^ horizontal map
-		hexPattern 	|= ((horizComponent & (1 << 0)) << 0) // a
-					| ((vertComponent & (1 << 0)) << 1) // b
-					| ((vertComponent & (1 << 1)) << 1) // c
-					| ((horizComponent & (1 << 1)) << 2) // d
-					| ((vertComponent & (1 << 2)) << 2) // e
-					| ((vertComponent & (1 << 3)) << 2) // f
-					| ((horizComponent & (1 << 2)) << 4); // g
-		Set_7SEG_Section(i, hexPattern);
+char Boolean_Brightness(Level brightness) {
+	switch (brightness) {
+		case OFF:
+			return 0;
+		case ON:
+			return 1;
+		case DIM:
+			return ((timer % 8) == 0);
+		case BLINK:
+			return ((timer % 500) <= 250);
 	}
 }
 
