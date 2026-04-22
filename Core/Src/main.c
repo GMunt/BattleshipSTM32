@@ -130,7 +130,7 @@ Map p1_ships, p1_shots, p2_ships, p2_shots;
 Map cursor;
 
 void Display_Map(Map map);
-void Display_GameBoard(Phase phase);
+void Game_Loop_Control(Phase phase);
 char Boolean_Brightness(Level brightness);
 
 // Ship bitmap
@@ -324,21 +324,70 @@ void Display_Map(Map map) {
 	}
 }
 
-void Display_GameBoard(Phase phase) {
+void Game_Loop_Control(Phase phase) {
 	Map shotMap;
 
 	switch (phase) {
-	// ...
+		case TITLE:
+			// Display title on board (scrolling?)
+			// wait for button press
+			// Move game phase to P1PLACE
+			Game_Loop_Control(P1PLACE);
+			break;
+		case P1PLACE:
+			// Loop placing function until done with ships
+
+			Game_Loop_Control(P2PLACE);
+			break;
+		case P2PLACE:
+			// Loop placing function until done with ships
+
+			Game_Loop_Control(P1TURN);
+			break;
 		case P1TURN:
 			shotMap = p1_shots;
+			Game_Loop_Control(P2TURN);
+			break;
 		case P2TURN:
 			shotMap = p2_shots;
-		// ...
+
+			Game_Loop_Control(P1TURN);
+			break;
+		case P1WIN:
+			// Show victory screen, wait for button press
+			Game_Loop_Control(TITLE);
+			break;
+		case P2WIN:
+			// Show victory screen, wait for button press
+
+			Game_Loop_Control(TITLE);
+			break;
 	}
 
 	// ...
 
 }
+
+// Player shoot
+int Player_Shoot(Phase phase) {
+	Map currentShotMap;
+	Map currentShipMap;
+	switch (phase) {
+	case (P1TURN):
+
+		break;
+	case (P2TURN):
+		break;
+	default:
+		// Throw error
+	}
+
+}
+
+
+// Place ship (1 and 2 long)
+
+// Game start? In main?
 
 char Boolean_Brightness(Level brightness) {
 	switch (brightness) {
