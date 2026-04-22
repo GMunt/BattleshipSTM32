@@ -128,6 +128,10 @@ typedef struct {
 
 Map p1_ships, p1_shots, p2_ships, p2_shots;
 Map cursor;
+const Map nullMap;
+
+char TitleMessage[] = { SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, CHAR_B, CHAR_A, CHAR_T, CHAR_T, CHAR_L, CHAR_E, CHAR_S, CHAR_H, CHAR_I, CHAR_P, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE };
+char P1PlaceMessage[] = { CHAR_P, 1, CHAR_P, CHAR_L, CHAR_A, CHAR_C, CHAR_E };
 
 void Display_Map(Map map);
 void Game_Loop_Control(Phase phase);
@@ -253,16 +257,17 @@ int main(void)
 
 //	  p1_ships.horizontal = 0b00000000111010100001100010100001;
 //	  p1_ships.vertical = 0b10100101011010011000010000100001;
-	  p1_ships.vertical[0][0] = DIM;
-	  p1_ships.vertical[1][0] = BLINK;
-
-	  for(int i =0; i < 8; i++) {
-		  p1_ships.horizontal[0][i] = DIM;
-	  }
-
-	  p1_ships.horizontal[0][0] = ON;
-
-	  Display_Map(p1_ships);
+//	  p1_ships.vertical[0][0] = DIM;
+//	  p1_ships.vertical[1][0] = BLINK;
+//
+//	  for(int i =0; i < 8; i++) {
+//		  p1_ships.horizontal[0][i] = DIM;
+//	  }
+//
+//	  p1_ships.horizontal[0][0] = ON;
+//
+//	  Display_Map(p1_ships);
+	  Game_Loop_Control(TITLE);
 
 
     /* USER CODE BEGIN 3 */
@@ -310,13 +315,13 @@ void Display_Map(Map map) {
 	// Vertical
 	for (i = 0; i < 8; i++) {
 		// Top Left
-		board[i] |= Boolean_Brightness(map.vertical[0][i]) << 5;
+		board[i] |= Boolean_Brightness(map.vertical[0][2 * i + 1]) << 5;
 		// Top Right
-		board[i] |= Boolean_Brightness(map.vertical[0][i + 8]) << 1;
+		board[i] |= Boolean_Brightness(map.vertical[0][2 * i]) << 1;
 		// Bottom Left
-		board[i] |= Boolean_Brightness(map.vertical[1][i]) << 4;
+		board[i] |= Boolean_Brightness(map.vertical[1][2 * i + 1]) << 4;
 		// Bottom Right
-		board[i] |= Boolean_Brightness(map.vertical[1][i + 8]) << 2;
+		board[i] |= Boolean_Brightness(map.vertical[1][2 * i]) << 2;
 	}
 
 	for (i = 0; i < 8; i++) {
@@ -330,12 +335,40 @@ void Game_Loop_Control(Phase phase) {
 	switch (phase) {
 		case TITLE:
 			// Display title on board (scrolling?)
+			Message_Pointer = &TitleMessage[0];
+		    Save_Pointer = &TitleMessage[0];
+		    Message_Length = sizeof(TitleMessage)/sizeof(TitleMessage[0]);
+		    Delay_msec = 200;
+		    Animate_On = 1;
+
 			// wait for button press
+		    while ((GPIOC->IDR & (1 << 10)) == (1 << 10)) {}
+			Animate_On = 0;
+
 			// Move game phase to P1PLACE
+
 			Game_Loop_Control(P1PLACE);
+
 			break;
 		case P1PLACE:
 			// Loop placing function until done with ships
+
+			// TEMP
+			Message_Pointer = &P1PlaceMessage[0];
+		    Save_Pointer = &P1PlaceMessage[0];
+		    Message_Length = sizeof(P1PlaceMessage)/sizeof(P1PlaceMessage[0]);
+		    Delay_msec = 200;
+		    Animate_On = 1;
+
+		    HAL_Delay(2000);
+
+		    Animate_On = 0;
+
+		    while(1) {
+		    	Player_Place_Loop(P1PLACE);
+		    }
+
+		    // Place loop
 
 			Game_Loop_Control(P2PLACE);
 			break;
@@ -368,6 +401,46 @@ void Game_Loop_Control(Phase phase) {
 
 }
 
+void Potentiometer_Init(int index) {
+	if (index > 3 || index < 1) return;
+	ADC1->SQR3 = index; // select ADC channel
+	HAL_Delay(1);
+	/**** START ADC1 CONVERSION ****/    // Start a conversion on ADC1 by forcing bit 30 in CR2 to 1 while keeping other bits unchanged
+	ADC1->CR2 |= 1 << 30;
+
+	HAL_Delay(1);
+
+}
+
+void Player_Place_Loop(Phase phase) {
+	Potentiometer_Init(3);
+	cursor = nullMap;
+
+	if (ADC1->DR >> 11) {
+		// Horizontal
+		Potentiometer_Init(1);
+		int x = (ADC1->DR >> 9);
+
+		Potentiometer_Init(2);
+		int y = (ADC1->DR * 3 / 4096);
+		cursor.horizontal[y][x] = BLINK;
+	} else {
+		// Vertical
+		Potentiometer_Init(1);
+		int x = (ADC1->DR >> 8);
+
+		Potentiometer_Init(2);
+		int y = (ADC1->DR >> 11);
+		cursor.vertical[y][x] = BLINK;
+
+	}
+
+
+
+
+	Display_Map(cursor);
+}
+
 // Player shoot
 int Player_Shoot(Phase phase) {
 	Map currentShotMap;
@@ -379,6 +452,7 @@ int Player_Shoot(Phase phase) {
 	case (P2TURN):
 		break;
 	default:
+		break;
 		// Throw error
 	}
 

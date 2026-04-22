@@ -188,6 +188,41 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   timer++;
 
+  COUNT++;  // Increment note duration counter
+  Vibrato_Count++; // Increment the note vibrato effect counter
+
+  /* This code applies vibrato to the current note that is playing  */
+  if (Vibrato_Count >= Vibrato_Rate)
+  {
+  	Vibrato_Count = 0;
+  	if (Song[INDEX].note > 0)
+  		{
+  			Song[INDEX].note += Vibrato_Depth;
+  			if (Song[INDEX].note > (Save_Note + Vibrato_Depth)) Song[INDEX].note = Save_Note - Vibrato_Depth;
+
+  		}
+  }
+
+  if (Animate_On > 0)
+  {
+  	Delay_counter++;
+  	if (Delay_counter > Delay_msec)
+  	{
+  		Delay_counter = 0;
+  		Seven_Segment_Digit(7,*(Message_Pointer),0);
+  		Seven_Segment_Digit(6,*(Message_Pointer+1),0);
+  		Seven_Segment_Digit(5,*(Message_Pointer+2),0);
+  		Seven_Segment_Digit(4,*(Message_Pointer+3),0);
+  		Seven_Segment_Digit(3,*(Message_Pointer+4),0);
+  		Seven_Segment_Digit(2,*(Message_Pointer+5),0);
+  		Seven_Segment_Digit(1,*(Message_Pointer+6),0);
+  		Seven_Segment_Digit(0,*(Message_Pointer+7),0);
+  		Message_Pointer++;
+  		if ((Message_Pointer - Save_Pointer) >= (Message_Length-8)) Message_Pointer = Save_Pointer;
+
+  	}
+  }
+
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
 
