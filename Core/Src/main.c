@@ -1,7 +1,7 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : main.c  LAB6
+  * @file           : main.c  Battleship
   * @brief          : Main program body
   ******************************************************************************
   * @attention
@@ -21,27 +21,6 @@
 #include "usb_host.h"
 #include "seg7.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
@@ -74,14 +53,8 @@ void MX_USB_HOST_Process(void);
 
 int timer = 0;
 
+// Music variables
 char ramp = 0;
-char RED_BRT = 0;
-char GREEN_BRT = 0;
-char BLUE_BRT = 0;
-char RED_STEP = 1;
-char GREEN_STEP = 2;
-char BLUE_STEP = 3;
-char DIM_Enable = 0;
 char Music_ON = 0;
 int TONE = 0;
 int COUNT = 0;
@@ -91,6 +64,8 @@ int Save_Note = 0;
 int Vibrato_Depth = 1;
 int Vibrato_Rate = 40;
 int Vibrato_Count = 0;
+
+// Message variables
 char Animate_On = 0;
 char Message_Length = 0;
 char *Message_Pointer;
@@ -98,11 +73,20 @@ char *Save_Pointer;
 int Delay_msec = 0;
 int Delay_counter = 0;
 
-int CRC_Tx = 0x7bc26311;
-int CRC_Rx = 0;
+// Actual messages
+char TitleMessage[] = { SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, CHAR_B, CHAR_A, CHAR_T, CHAR_T, CHAR_L, CHAR_E, CHAR_S, CHAR_H, CHAR_I, CHAR_P, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE };
+char P1PlaceMessage[] = { CHAR_P, 1, SPACE, CHAR_P, CHAR_L, CHAR_A, CHAR_C, CHAR_E };
+char P2PlaceMessage[] = { CHAR_P, 2, SPACE, CHAR_P, CHAR_L, CHAR_A, CHAR_C, CHAR_E };
+char P1TurnMessage[] = { CHAR_P, 1, SPACE, CHAR_T, CHAR_U, CHAR_R, CHAR_N, SPACE};
+char P2TurnMessage[] = { CHAR_P, 2, SPACE, CHAR_T, CHAR_U, CHAR_R, CHAR_N, SPACE};
+char P1WinMessage[] = { CHAR_P, 1, SPACE, CHAR_W, CHAR_I, CHAR_N, CHAR_S, SPACE};
+char P2WinMessage[] = { CHAR_P, 2, SPACE, CHAR_W, CHAR_I, CHAR_N, CHAR_S, SPACE};
 
-/* GAME VARS */
+//
+// Game Variables
+//
 
+// LED light level state
 typedef enum Level {
 	OFF,
 	DIM,
@@ -110,6 +94,7 @@ typedef enum Level {
 	BLINK
 } Level;
 
+// Game state phase
 typedef enum Phase {
 	TITLE,
 	P1PLACE,
@@ -120,11 +105,11 @@ typedef enum Phase {
 	P2WIN
 } Phase;
 
+// Game map struct
 typedef struct {
 	Level vertical[2][16];		// 16 top row, 16 bottom row
 	Level horizontal[3][8];	// 8 top, 8 mid, 8 bottom
 } Map;
-
 
 Map p1_ships, p1_shots, p2_ships, p2_shots;
 Map cursor;
@@ -146,14 +131,7 @@ int hitsToWin = 7;
 
 int turnOver = 0;
 
-char TitleMessage[] = { SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, CHAR_B, CHAR_A, CHAR_T, CHAR_T, CHAR_L, CHAR_E, CHAR_S, CHAR_H, CHAR_I, CHAR_P, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE };
-char P1PlaceMessage[] = { CHAR_P, 1, SPACE, CHAR_P, CHAR_L, CHAR_A, CHAR_C, CHAR_E };
-char P2PlaceMessage[] = { CHAR_P, 2, SPACE, CHAR_P, CHAR_L, CHAR_A, CHAR_C, CHAR_E };
-char P1TurnMessage[] = { CHAR_P, 1, SPACE, CHAR_T, CHAR_U, CHAR_R, CHAR_N, SPACE};
-char P2TurnMessage[] = { CHAR_P, 2, SPACE, CHAR_T, CHAR_U, CHAR_R, CHAR_N, SPACE};
-char P1WinMessage[] = { CHAR_P, 1, SPACE, CHAR_W, CHAR_I, CHAR_N, CHAR_S, SPACE};
-char P2WinMessage[] = { CHAR_P, 2, SPACE, CHAR_W, CHAR_I, CHAR_N, CHAR_S, SPACE};
-
+// Function prototypes
 void Display_Map(Map map);
 void Game_Loop_Control();
 void Player_Place_Loop(Phase phase);
@@ -167,7 +145,6 @@ int Button_Pressed();
 Music Song[100];
 
 
-/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -175,34 +152,19 @@ Music Song[100];
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  //MX_I2C1_Init();
-  //MX_I2S3_Init();
-  //MX_SPI1_Init();
-  //MX_USB_HOST_Init();
   MX_TIM7_Init();
-  /* USER CODE BEGIN 2 */
 
   /*** Configure GPIOs ***/
   GPIOD->MODER = 0x55555555; // set all Port D pins to outputs
@@ -214,7 +176,7 @@ int main(void)
   /*** Configure ADC1 ***/
   RCC->APB2ENR |= 1<<8;  // Turn on ADC1 clock by forcing bit 8 to 1 while keeping other bits unchanged
   ADC1->SMPR2 |= 1; // 15 clock cycles per sample
-  ADC1->CR2 |= 1;        // Turn on ADC1 by forcing bit 0 to 1 while keeping other bits unchanged
+  ADC1->CR2 |= 1;	// Turn on ADC1 by forcing bit 0 to 1 while keeping other bits unchanged
 
   /*** Turn on CRC Clock in AHB1ENR to enable CRC hardware ***/
   RCC->AHB1ENR |= 1 << 12;
@@ -231,24 +193,19 @@ int main(void)
   TIM7->DIER |= 1; // Enable timer 7 interrupt
   TIM7->CR1 |= 1; // Enable timer counting
 
-  /* USER CODE END 2 */
 
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
 
-  while (1)
-  {
-	  Game_Loop_Control();
+  // Enter game loop (nothing more needed)
+  Game_Loop_Control();
 
-
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
 }
 
 /* GAME HELPER FUNCTIONS */
 
+// Set a provided 7 SEG section (0-7) to a provided pattern
 void Set_7SEG_Section(int section, char hex) {
+	// Sets the selection bit, and pattern to turn on desired segments
 	GPIOE->ODR = (0xFF00 | ~hex) & ~(1 << (section + 8));
 
 	// Set all selects high to latch-in character
@@ -256,20 +213,30 @@ void Set_7SEG_Section(int section, char hex) {
 	return;
 }
 
+// Flattens several maps into a single map, prioritizes maps later in the list
 void Composite_Display(Map maps[], int count) {
 	Map combinedMap = nullMap;
 
+	// Loop over every map in provided array
 	for (int i = 0; i < count; i++) {
+		// Horizontal mapping section
+		// Loops over every horizontal segment in the map
 		for (int j = 0; j < 3; j++) {
 			for (int k = 0; k < 8; k++) {
+				// Doesn't override with empty/transparent spaces
 				if (maps[i].horizontal[j][k] == OFF) {
 					continue;
 				}
+				// Update combined map at location
 				combinedMap.horizontal[j][k] = maps[i].horizontal[j][k];
 			}
 		}
+
+		// Vertical mapping section
+		// Loops over every vertical segment in the map
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 16; k++) {
+				// Same as horizontal
 				if (maps[i].vertical[j][k] == OFF) {
 					continue;
 				}
@@ -277,9 +244,11 @@ void Composite_Display(Map maps[], int count) {
 			}
 		}
 	}
+	// Displays the combined map
 	Display_Map(combinedMap);
 }
 
+// Displays a given map to 7 segment display
 void Display_Map(Map map) {
 	char board[8] = {0};
 
@@ -307,42 +276,52 @@ void Display_Map(Map map) {
 		board[i] |= Boolean_Brightness(map.vertical[1][2 * i]) << 2;
 	}
 
+	// Display loop
 	for (i = 0; i < 8; i++) {
 		Set_7SEG_Section(i, board[i]);
 	}
 }
 
+// Returns 1 if the PC10 button is being pressed, else 0
 int Button_Pressed() {
 	return !((GPIOC->IDR & (1 << 10)) == (1 << 10));
 }
 
+// Uses interrupt handler to animate a message scrolling across the display
 void Animate_Message(char *message) {
 
+	// Set global variable for message pointer
 	Message_Pointer = &message[0];
 	Save_Pointer = &message[0];
 	Message_Length = sizeof(message)/sizeof(message[0]);
 	Delay_msec = 200;
+	// Set flag to animate
 	Animate_On = 1;
 
+	// Wait 2 seconds
 	HAL_Delay(2000);
 
+	// Set flag to stop animation
 	Animate_On = 0;
 }
 
+// State machine that manages game control flow based on state/phase
 void Game_Loop_Control() {
 	Phase phase = TITLE;
 
 	while(1) {
-
+		// Check phase
 		switch (phase) {
 			case TITLE:
-				// Display title on board (scrolling?)
+				// Display title on board (Can't use helper function because
+				//		we want to animate until button press)
 				Message_Pointer = &TitleMessage[0];
 				Save_Pointer = &TitleMessage[0];
 				Message_Length = sizeof(TitleMessage)/sizeof(TitleMessage[0]);
 				Delay_msec = 200;
 				Animate_On = 1;
 
+				// Initialize game variables
 				unplacedDoubles = 2;
 				unplacedSingles = 3;
 				doubleMode = 0;
@@ -357,7 +336,6 @@ void Game_Loop_Control() {
 				Animate_On = 0;
 
 				// Move game phase to P1PLACE
-
 				phase = P1PLACE;
 
 				break;
@@ -376,37 +354,45 @@ void Game_Loop_Control() {
 				unplacedDoubles = 2;
 				doubleMode = 0;
 
+				// Wait to show placed ships for a moment
 				timer = 0;
 
 				while (timer < 1500) {
 					Display_Map(p1_ships);
 				}
 
+				// Move to next phase
 				phase = P2PLACE;
 				break;
 			case P2PLACE:
 				// Loop placing function until done with ships
 				Animate_Message(P2PlaceMessage);
 
+				// Loop until all ships are placed
 				while(unplacedDoubles > 0) {
 					Player_Place_Loop(P2PLACE);
 				}
 
 				doubleMode = 0;
 
+				// Pause to show ship layout
 				timer = 0;
 
 				while (timer < 1500) {
 					Display_Map(p2_ships);
 				}
 
+				// Move to next phase
 				phase = P1TURN;
 				break;
 			case P1TURN:
+				// Display message
 				Animate_Message(P1TurnMessage);
 
+				// Continue prompting Player Shoot function until a valid shot is made
 				while(Player_Shoot(P1TURN) != 1) {}
 
+				// Detect win
 				if (p1Hits >= hitsToWin) {
 					phase = P1WIN;
 					break;
@@ -425,15 +411,19 @@ void Game_Loop_Control() {
 				phase = P2TURN;
 				break;
 			case P2TURN:
+				// Display message
 				Animate_Message(P2TurnMessage);
 
+				// Prompt until shot
 				while(Player_Shoot(P2TURN) != 1) {}
 
+				// Detect win
 				if (p2Hits >= hitsToWin) {
 					phase = P2WIN;
 					break;
 				}
 
+				// Wait while maintaining PWM
 				timer = 0;
 
 				while (timer < 1000) {
@@ -443,30 +433,32 @@ void Game_Loop_Control() {
 				// Delay to show only hit ships
 				HAL_Delay(1000);
 
+				// Move to next phase
 				phase = P1TURN;
 				break;
 			case P1WIN:
-				// Show victory screen, wait for button press
+				// Show victory screen, wait 5 seconds
 				Animate_Message(P1WinMessage);
 				HAL_Delay(5000);
 
+				// Restart
 				phase = TITLE;
 				break;
 			case P2WIN:
-				// Show victory screen, wait for button press
+				// Show victory screen, wait 5 seconds
 				Animate_Message(P2WinMessage);
 				HAL_Delay(5000);
 
+				// Restart
 				phase = TITLE;
 				break;
 		}
 	}
-
-	// ...
-
 }
 
+// Handles all hardware initialization and conversion setup
 void Potentiometer_Init(int index) {
+	// Bounds check (must be valid potentiometer)
 	if (index > 3 || index < 1) return;
 	ADC1->SQR3 = index; // select ADC channel
 	HAL_Delay(1);
@@ -477,19 +469,24 @@ void Potentiometer_Init(int index) {
 
 }
 
+// Helper to place a ship at cursor on given map
 int Place_Ship(Map *map) {
 	if (cursorVH) {
+		// Horizontal
+		// If space is occupied, fail
 		if (map->horizontal[cursorY][cursorX] == ON) {
 			return -1;
 		} else if (doubleMode && map->horizontal[cursorY][cursorX + 1] == ON) {
 			return -1;
 		} else {
+			// Place ship
 			map->horizontal[cursorY][cursorX] = ON;
 			if (doubleMode) {
 				map->horizontal[cursorY][cursorX + 1] = ON;
 			}
 		}
 	} else {
+		// Vertical ^^
 		if (map->vertical[cursorY][cursorX] == ON) {
 			return -1;
 		} else if (doubleMode && map->vertical[1][cursorX] == ON) {
@@ -503,26 +500,39 @@ int Place_Ship(Map *map) {
 	}
 }
 
+// Read cursor position based on potentiometers
 void Process_Cursor() {
+	// Set active potentiometer to 3 for vertical/horizontal selection
 	Potentiometer_Init(3);
+	// Clear cursor data
 	cursor = nullMap;
+	// Same as dividing by 2048. Divides potentiometer range into 2 sections: v or h
 	if (ADC1->DR >> 11) {
 		// Horizontal
+		// Set active potentiometer to 1 for x selection
 		Potentiometer_Init(1);
+		// If cursor is double sized, must "collide" 1 segment sooner
 		if (doubleMode) {
+			// Divides range into 7 sections
 			cursorX = (ADC1->DR * 7 / 4096);
 		} else {
+			// Divides range into 8 sections
 			cursorX = (ADC1->DR >> 9);
 		}
 
+		// Set active potentiometer to 2 for y selection
 		Potentiometer_Init(2);
 
+		// Divides range into 3 sections
 		cursorY = (ADC1->DR * 3 / 4096);
+
+		// Sets cursor map at cursor location to blink
 		cursor.horizontal[cursorY][cursorX] = BLINK;
 		if (doubleMode) {
 			cursor.horizontal[cursorY][cursorX + 1] = BLINK;
 		}
 
+		// Set direction flag
 		cursorVH = 1;
 	} else {
 		// Vertical
@@ -544,16 +554,22 @@ void Process_Cursor() {
 	}
 }
 
+// Loop place phase for a given player
 void Player_Place_Loop(Phase phase) {
 
+	// Switch to double ships if singles are all placed
 	if (unplacedSingles <= 0) {
 		doubleMode = 1;
 	}
 
+	// Find cursor
 	Process_Cursor();
 
+	// Wait for button press (this function loops so it acts as a wait)
 	if (Button_Pressed()) {
 		if (phase == P1PLACE) {
+			// P1
+			// Place if valid spot
 			if (Place_Ship(&p1_ships) != -1) {
 				if (doubleMode) {
 					unplacedDoubles--;
@@ -562,6 +578,7 @@ void Player_Place_Loop(Phase phase) {
 				}
 			}
 		} else {
+			// P2
 			if (Place_Ship(&p2_ships) != -1) {
 				if (doubleMode) {
 					unplacedDoubles--;
@@ -572,53 +589,62 @@ void Player_Place_Loop(Phase phase) {
 		}
 	}
 
+	// Set maps to display (cursor on top)
 	Map maps[] = {
 			((phase == P1PLACE) ? p1_ships : p2_ships),
 			cursor
 	};
 
+	// Display
 	Composite_Display(maps, 2);
 }
 
-// Player shoot
+// Prompt player to shoot
 int Player_Shoot(Phase phase) {
+	// Pointer variables (to minimize code duplication)
 	Map *currentShotMap;
 	Map *currentShipMap;
 	int *playersHits;
+
+	// Assign correct player to pointer variables
 	switch (phase) {
-	case (P1TURN):
-		currentShotMap = &p1_shots;
-		currentShipMap = &p2_ships;
-		playersHits = &p1Hits;
-		break;
-	case (P2TURN):
-		currentShotMap = &p2_shots;
-		currentShipMap = &p1_ships;
-		playersHits = &p2Hits;
-		break;
-	default:
-		break;
-		// Throw error
+		case (P1TURN):
+			currentShotMap = &p1_shots;
+			currentShipMap = &p2_ships;
+			playersHits = &p1Hits;
+			break;
+		case (P2TURN):
+			currentShotMap = &p2_shots;
+			currentShipMap = &p1_ships;
+			playersHits = &p2Hits;
+			break;
+		default:
+			break;
 	}
 
+	// Find cursor
 	Process_Cursor();
 
-	// Shoot
 
 	int success = -1;
 
+	// Wait for button press
 	if (Button_Pressed()) {
 		if (cursorVH) {
+			// Vertical
 			if (currentShotMap->horizontal[cursorY][cursorX] != OFF) {
+				// Fail if invalid
 				return -1;
 			}
 			if (currentShipMap->horizontal[cursorY][cursorX] == ON) {
+				// Mark player map with shot
 				currentShotMap->horizontal[cursorY][cursorX] = ON;
-				(*playersHits)++;
+				(*playersHits)++;	// (Must dereference or this advances the pointer address)
 			} else {
 				currentShotMap->horizontal[cursorY][cursorX] = DIM;
 			}
 		} else {
+			// Horizontal
 			if (currentShotMap->vertical[cursorY][cursorX] != OFF) {
 				return -1;
 			}
@@ -629,19 +655,23 @@ int Player_Shoot(Phase phase) {
 				currentShotMap->vertical[cursorY][cursorX] = DIM;
 			}
 		}
+		// If we haven't returned, its a success
 		success = 1;
 	}
 
+	// Set map order
 	Map maps[] = {
 			*currentShotMap,
 			cursor
 	};
 
+	// Display
 	Composite_Display(maps, 2);
 
 	return success;
 }
 
+// Provides the logic for if a LED should be on/off per tick
 char Boolean_Brightness(Level brightness) {
 	switch (brightness) {
 		case OFF:
@@ -649,8 +679,10 @@ char Boolean_Brightness(Level brightness) {
 		case ON:
 			return 1;
 		case DIM:
+			// >50% duty cycle (more visually clear)
 			return ((timer % 8) <= 2);
 		case BLINK:
+			// 50% slower rate duty cycle == slow bright blink
 			return ((timer % 500) <= 250);
 	}
 }
