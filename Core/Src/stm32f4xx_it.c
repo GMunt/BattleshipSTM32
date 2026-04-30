@@ -270,7 +270,7 @@ void TIM7_IRQHandler(void)
 					INDEX++;
 					Save_Note = Song[INDEX].note;
 				} else {
-					Music_On = 0;
+					Music_ON = 0;
 				}
 	}
 	else if (Music_ON == 0)

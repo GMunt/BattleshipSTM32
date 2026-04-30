@@ -148,32 +148,6 @@ void Wait_SFX_Done();
  * TIM7 fires at 125,000 Hz.  Toggling PD0 every `note` ISR ticks produces
  * a square wave at the desired frequency on the piezo buzzer.
  * ========================================================================== */
-#define REST  0
-#define D3    425
-#define A3    284
-#define C4    238
-#define D4    213
-#define E4    189
-#define F4    179
-#define G4    159
-#define A4    142
-#define Bb4   134
-#define B4    127
-#define C5    120
-#define D5    107
-#define E5    95
-#define F5    90
-#define G5    80
-#define A5    71
-
-/* Tempo constants in TIM7 ISR ticks (125 kHz clock, 160 BPM) */
-#define QTR   46875   /* quarter note                      */
-#define ETH   23437   /* eighth note                       */
-#define DOT_Q 70312   /* dotted quarter (q + e)            */
-#define HALF  93750   /* half note                         */
-#define SFX_T 6000    /* short SFX tick unit (~48 ms each) */
-#define ART   800     /* articulation gap for melody notes */
-#define SFX_A 200     /* articulation gap for SFX notes    */
 
 /* --------------------------------------------------------------------------
  * Title Music: "He's a Pirate" (Pirates of the Caribbean main theme)
@@ -181,78 +155,113 @@ void Wait_SFX_Done();
  * Loop is managed by Game_Loop_Control re-calling Play_Song each time the
  * title screen is shown.
  * -------------------------------------------------------------------------- */
-Music TitleSong[] = {
-	/* Pickup */
-	{A4,  1, ETH,   ART, 0},
+#define DOT_Q 3 // (quarter / 1.5) for the dotted quarter rhythm
 
-	/* Bar 1 */
-	{D4,  1, QTR,   ART, 0},
-	{E4,  1, ETH,   ART, 0},
-	{F4,  1, QTR,   ART, 0},
-	{A4,  1, QTR,   ART, 0},
+Music TitleSong[] = {
+	/* Bar 1 - Pickup (Treble Clef) */
+	{A3, _8th, 1000, 5, 0},
+	{C4, _8th, 1000, 5, 0},
 
 	/* Bar 2 */
-	{A4,  1, DOT_Q, ART, 0},
-	{Bb4, 1, ETH,   ART, 0},
-	{A4,  1, QTR,   ART, 0},
-	{REST,1, QTR,   0,   0},
+	{D4, quarter, 1000, 5, 0},
+	{D4, quarter, 1000, 5, 0},
+	{D4, _8th,    1000, 5, 0},
+	{E4, _8th,    1000, 5, 0},
 
 	/* Bar 3 */
-	{F4,  1, QTR,   ART, 0},
-	{G4,  1, ETH,   ART, 0},
-	{A4,  1, QTR,   ART, 0},
-	{REST,1, QTR,   0,   0},
+	{F4, quarter, 1000, 5, 0},
+	{F4, quarter, 1000, 5, 0},
+	{F4, _8th,    1000, 5, 0},
+	{G4, _8th,    1000, 5, 0},
 
 	/* Bar 4 */
-	{D4,  1, QTR,   ART, 0},
-	{E4,  1, ETH,   ART, 0},
-	{F4,  1, QTR,   ART, 0},
-	{G4,  1, QTR,   ART, 0},
+	{E4, quarter, 1000, 5, 0},
+	{E4, quarter, 1000, 5, 0},
+	{D4, _8th,    1000, 5, 0},
+	{C4, _8th,    1000, 5, 0},
 
 	/* Bar 5 */
-	{G4,  1, DOT_Q, ART, 0},
-	{A4,  1, ETH,   ART, 0},
-	{G4,  1, QTR,   ART, 0},
-	{REST,1, QTR,   0,   0},
+	{D4, DOT_Q,   1000, 10, 0},
+	{0,  _8th,    1000, 0,  0}, // Rest
+	{A3, _8th,    1000, 5,  0},
+	{C4, _8th,    1000, 5,  0},
 
 	/* Bar 6 */
-	{E4,  1, QTR,   ART, 0},
-	{F4,  1, ETH,   ART, 0},
-	{G4,  1, QTR,   ART, 0},
-	{REST,1, QTR,   0,   0},
+	{D4, quarter, 1000, 5, 0},
+	{D4, quarter, 1000, 5, 0},
+	{D4, _8th,    1000, 5, 0},
+	{E4, _8th,    1000, 5, 0},
 
 	/* Bar 7 */
-	{C5,  1, QTR,   ART, 0},
-	{B4,  1, ETH,   ART, 0},
-	{C5,  1, QTR,   ART, 0},
-	{A4,  1, QTR,   ART, 0},
+	{F4, quarter, 1000, 5, 0},
+	{F4, quarter, 1000, 5, 0},
+	{F4, _8th,    1000, 5, 0},
+	{G4, _8th,    1000, 5, 0},
 
 	/* Bar 8 */
-	{A4,  1, HALF,  ART, 0},
-	{REST,1, QTR,   0,   0},
+	{E4, quarter, 1000, 5, 0},
+	{E4, quarter, 1000, 5, 0},
+	{D4, _8th,    1000, 5, 0},
+	{C4, _8th,    1000, 5, 0},
 
-	/* Bar 9 - restatement of bar 1 */
-	{D4,  1, QTR,   ART, 0},
-	{E4,  1, ETH,   ART, 0},
-	{F4,  1, QTR,   ART, 0},
-	{A4,  1, QTR,   ART, 0},
+	/* Bar 9 */
+	{D4, DOT_Q,   1000, 10, 0},
+	{0,  _8th,    1000, 0,  0}, // Rest
+	{A3, _8th,    1000, 5,  0},
+	{C4, _8th,    1000, 5,  0},
 
-	/* Bar 10 - restatement of bar 2 */
-	{A4,  1, DOT_Q, ART, 0},
-	{Bb4, 1, ETH,   ART, 0},
-	{A4,  1, QTR,   ART, 0},
-	{REST,1, QTR,   0,   0},
+	/* Bar 10 (Melody climbs) */
+	{D4, quarter, 1000, 5, 0},
+	{D4, quarter, 1000, 5, 0},
+	{D4, _8th,    1000, 5, 0},
+	{F4, _8th,    1000, 5, 0},
 
-	/* Bar 11 - resolution phrase */
-	{F4,  1, QTR,   ART, 0},
-	{E4,  1, ETH,   ART, 0},
-	{D4,  1, QTR,   ART, 0},
-	{REST,1, QTR,   0,   0},
+	/* Bar 11 */
+	{G4, quarter, 1000, 5, 0},
+	{G4, quarter, 1000, 5, 0},
+	{G4, _8th,    1000, 5, 0},
+	{A4, _8th,    1000, 5, 0},
 
-	/* Bar 12 - final hold, end=1 stops ISR */
-	{D4,  1, HALF,  ART, 0},
-	{D4,  1, QTR,   ART, 1},
+	/* Bar 12 (High peak) */
+	{As4_Bb4, quarter, 1000, 5, 0},
+	{As4_Bb4, quarter, 1000, 5, 0},
+	{A4, _8th,    1000, 5, 0},
+	{G4, _8th,    1000, 5, 0},
+
+	/* Bar 13 */
+	{A4, quarter, 1000, 5, 0},
+	{D4, quarter, 1000, 5, 0},
+	{0,  _8th,    1000, 0,  0}, // Rest
+	{D4, _8th,    1000, 5,  0},
+
+	/* Bar 14 (Final Phrase) */
+	{E4, _8th,    1000, 5, 0},
+	{F4, _8th,    1000, 5, 0},
+	{G4, quarter, 1000, 5, 0},
+	{A4, quarter, 1000, 5, 0},
+
+	/* Bar 15 */
+	{D4, DOT_Q,   1000, 10, 0},
+	{0,  _8th,    1000, 0,  0}, // Rest
+	{F4, _8th,    1000, 5,  0},
+	{G4, _8th,    1000, 5,  0},
+
+	/* Bar 16 (Resolution) */
+	{A4, quarter, 1000, 5, 0},
+	{D5, quarter, 1000, 5, 0},
+	{A4, quarter, 1000, 5, 0},
+
+	/* Bar 17 (The Hold) */
+	{As4_Bb4, _8th, 1000, 5, 0},
+	{G4, _8th,      1000, 5, 0},
+	{A4, DOT_Q,     1000, 10, 0},
+
+	/* Bar 18 - Final Resolution as per sheet */
+	{F4, _8th,      1000, 5, 0},
+	{E4, _8th,      1000, 5, 0},
+	{D4, whole,     1000, 20, 1} // End
 };
+
 int TitleSongLength = sizeof(TitleSong) / sizeof(TitleSong[0]);
 
 /* --------------------------------------------------------------------------
@@ -260,31 +269,32 @@ int TitleSongLength = sizeof(TitleSong) / sizeof(TitleSong[0]);
  * Upbeat nautical fanfare played under the winner announcement.
  * -------------------------------------------------------------------------- */
 Music VictorySong[] = {
-	{C5,  1, ETH,   ART, 0},
-	{E5,  1, ETH,   ART, 0},
-	{G5,  1, ETH,   ART, 0},
-	{C5,  1, QTR,   ART, 0},
-	{E5,  1, ETH,   ART, 0},
-	{G5,  1, DOT_Q, ART, 0},
-	{E5,  1, ETH,   ART, 0},
-	{G5,  1, HALF,  ART, 0},
+    /* Note, Size, Tempo, Space, End */
+    {C5, _8th,    800, 5, 0},
+    {E5, _8th,    800, 5, 0},
+    {G5, _8th,    800, 5, 0},
+    {C5, quarter, 800, 5, 0},
+    {E5, _8th,    800, 5, 0},
+    {G5, DOT_Q,   800, 5, 0},
+    {E5, _8th,    800, 5, 0},
+    {G5, half,    800, 5, 0},
 
-	{A5,  1, ETH,   ART, 0},
-	{G5,  1, ETH,   ART, 0},
-	{F5,  1, ETH,   ART, 0},
-	{E5,  1, QTR,   ART, 0},
-	{F5,  1, ETH,   ART, 0},
-	{G5,  1, QTR,   ART, 0},
-	{E5,  1, ETH,   ART, 0},
-	{D5,  1, QTR,   ART, 0},
+    {A5, _8th,    800, 5, 0},
+    {G5, _8th,    800, 5, 0},
+    {F5, _8th,    800, 5, 0},
+    {E5, quarter, 800, 5, 0},
+    {F5, _8th,    800, 5, 0},
+    {G5, quarter, 800, 5, 0},
+    {E5, _8th,    800, 5, 0},
+    {D5, quarter, 800, 5, 0},
 
-	{E5,  1, ETH,   ART, 0},
-	{D5,  1, ETH,   ART, 0},
-	{C5,  1, ETH,   ART, 0},
-	{D5,  1, QTR,   ART, 0},
-	{C5,  1, ETH,   ART, 0},
-	{D5,  1, HALF,  ART, 0},
-	{C5,  1, HALF,  ART, 1},  /* end */
+    {E5, _8th,    800, 5, 0},
+    {D5, _8th,    800, 5, 0},
+    {C5, _8th,    800, 5, 0},
+    {D5, quarter, 800, 5, 0},
+    {C5, _8th,    800, 5, 0},
+    {D5, half,    800, 5, 0},
+    {C5, half,    800, 5, 1}  /* end */
 };
 int VictorySongLength = sizeof(VictorySong) / sizeof(VictorySong[0]);
 
@@ -294,23 +304,27 @@ int VictorySongLength = sizeof(VictorySong) / sizeof(VictorySong[0]);
  * Rising note values = falling frequency = descending pitch = boom.
  * -------------------------------------------------------------------------- */
 Music HitSFX[] = {
-	/* Sharp crack attack (very high frequency) */
-	{60,  1, SFX_T,     SFX_A, 0},
-	{70,  1, SFX_T,     SFX_A, 0},
-	{85,  1, SFX_T,     SFX_A, 0},
-	/* Rapid descending sweep */
-	{100, 1, SFX_T,     SFX_A, 0},
-	{120, 1, SFX_T,     SFX_A, 0},
-	{150, 1, SFX_T,     SFX_A, 0},
-	{190, 1, SFX_T,     SFX_A, 0},
-	{240, 1, SFX_T,     SFX_A, 0},
-	{300, 1, SFX_T,     SFX_A, 0},
-	/* Low rumble sustain */
-	{380, 1, SFX_T * 3, SFX_A, 0},
-	{420, 1, SFX_T * 3, SFX_A, 0},
-	{460, 1, SFX_T * 2, SFX_A, 0},
-	/* Silence tail, end=1 stops ISR */
-	{REST,1, SFX_T * 2, 0,     1},
+	/* Sharp Impact Crack */
+	{30,  _32nd, 500, 0, 0},
+	{200, _32nd, 500, 0, 0},
+	{40,  _32nd, 500, 0, 0},
+	{250, _32nd, 500, 0, 0},
+
+	/* Descending Power Sweep */
+	{100, _16th, 500, 0, 0},
+	{150, _16th, 500, 0, 0},
+	{220, _16th, 500, 0, 0},
+	{300, _16th, 500, 0, 0},
+	{450, _8th,  500, 0, 0},
+	{600, _8th,  500, 0, 0},
+
+	/* Low Rumble Sustain */
+	{800, quarter, 500, 2, 0},
+	{900, quarter, 500, 5, 0},
+	{950, half,    500, 10, 0},
+
+	/* Silence tail */
+	{0, quarter, 500, 0, 1}
 };
 int HitSFXLength = sizeof(HitSFX) / sizeof(HitSFX[0]);
 
@@ -319,29 +333,30 @@ int HitSFXLength = sizeof(HitSFX) / sizeof(HitSFX[0]);
  * Rising then falling pitch arc, like a cannonball hitting water.
  * -------------------------------------------------------------------------- */
 Music MissSFX[] = {
-	/* Rising arc (note value decreases = frequency increases) */
-	{280, 1, SFX_T,     SFX_A, 0},
-	{240, 1, SFX_T,     SFX_A, 0},
-	{200, 1, SFX_T,     SFX_A, 0},
-	{170, 1, SFX_T,     SFX_A, 0},
-	{150, 1, SFX_T,     SFX_A, 0},
-	/* Peak */
-	{140, 1, SFX_T,     SFX_A, 0},
-	/* Falling arc */
-	{155, 1, SFX_T,     SFX_A, 0},
-	{175, 1, SFX_T,     SFX_A, 0},
-	{210, 1, SFX_T,     SFX_A, 0},
-	{255, 1, SFX_T,     SFX_A, 0},
-	{310, 1, SFX_T,     SFX_A, 0},
-	/* Gurgle / dissipate */
-	{380, 1, SFX_T * 2, SFX_A, 0},
-	/* Silence tail, end=1 stops ISR */
-	{REST,1, SFX_T * 2, 0,     1},
+	/* The Falling Whistle (High to Mid) */
+	{100, _16th, 600, 0, 0},
+	{150, _16th, 600, 0, 0},
+	{200, _16th, 600, 0, 0},
+	{300, _16th, 600, 0, 0},
+
+	/* The "Bloop" Impact (Deep then sharp Rise) */
+	{800, _8th,  600, 0, 0},
+	{150, _32nd, 600, 0, 0},
+
+	/* The Splash/Spray (Higher frequencies with staccato space) */
+	{200, _16th, 600, 10, 0},
+	{220, _16th, 600, 10, 0},
+	{240, _16th, 600, 10, 0},
+	{280, _8th,  600, 15, 0},
+	{350, _8th,  600, 20, 0},
+
+	/* Dissipate */
+	{0, half, 600, 0, 1}
 };
 int MissSFXLength = sizeof(MissSFX) / sizeof(MissSFX[0]);
 
 /* Declare global Song array used by the TIM7 ISR */
-Music Song[100];
+Music Song[1000];
 
 /**
   * @brief  The application entry point.
@@ -418,7 +433,7 @@ void Play_Song(Music *src, int length) {
 	Music_ON  = 1;      /* Resume ISR playback */
 }
 
-/* Stops any currently playing sound and silences the buzzer */
+// Stops any currently playing sound and silences the buzzer
 void Stop_Music() {
 	Music_ON = 0;
 	INDEX = 0;
@@ -427,16 +442,10 @@ void Stop_Music() {
 	GPIOD->ODR &= ~1;   /* Drive PD0 low to silence piezo */
 }
 
-/*
- * Blocks until the ISR finishes the current SFX (Music_ON goes to 0).
- * Includes a timeout so the game cannot freeze if something goes wrong.
- * Only use after short SFX (HitSFX, MissSFX) - not for looping songs.
- */
+// Waits until sound is done playing
 void Wait_SFX_Done() {
-	int timeout = 1000; /* Maximum 1000ms wait */
-	while (Music_ON && timeout > 0) {
+	while (Music_ON) {
 		HAL_Delay(1);
-		timeout--;
 	}
 }
 
@@ -671,7 +680,6 @@ void Game_Loop_Control() {
 				Animate_Message(P2TurnMessage);
 
 				// Prompt until shot
-				int shotResult;
 				do {
 					shotResult = Player_Shoot(P2TURN);
 				} while (shotResult == -1);
@@ -896,7 +904,7 @@ int Player_Shoot(Phase phase) {
 	// Find cursor
 	Process_Cursor();
 
-
+	// If nothing sets this, something has gone wrong, so initialize to fail state
 	int success = -1;
 
 	// Wait for button press
@@ -910,9 +918,12 @@ int Player_Shoot(Phase phase) {
 			if (currentShipMap->horizontal[cursorY][cursorX] == ON) {
 				// Mark player map with shot
 				currentShotMap->horizontal[cursorY][cursorX] = ON;
+				success = 1;
 				(*playersHits)++;	// (Must dereference or this advances the pointer address)
 			} else {
+				// Mark with a miss
 				currentShotMap->horizontal[cursorY][cursorX] = DIM;
+				success = 0;
 			}
 		} else {
 			// Horizontal
@@ -921,13 +932,13 @@ int Player_Shoot(Phase phase) {
 			}
 			if (currentShipMap->vertical[cursorY][cursorX] == ON) {
 				currentShotMap->vertical[cursorY][cursorX] = ON;
+				success = 1;
 				(*playersHits)++;
 			} else {
 				currentShotMap->vertical[cursorY][cursorX] = DIM;
+				success = 0;
 			}
 		}
-		// If we haven't returned, its a success
-		success = 1;
 	}
 
 	// Set map order

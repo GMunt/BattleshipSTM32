@@ -1,7 +1,7 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : main.h LAB6
+  * @file           : main.h Battleship
   * @brief          : Header for main.c file.
   *                   This file contains the common defines of the application.
   ******************************************************************************
@@ -55,7 +55,7 @@ extern char DIM_Enable;
 extern int TONE;
 extern int COUNT;
 extern int INDEX;
-extern Music Song[100];
+extern Music Song[1000];
 extern int Note;
 extern int Save_Note;
 extern int Vibrato_Depth;
